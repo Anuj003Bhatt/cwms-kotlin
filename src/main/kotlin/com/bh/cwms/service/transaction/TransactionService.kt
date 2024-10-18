@@ -1,0 +1,66 @@
+package com.bh.cwms.service.transaction
+
+import com.bh.cwms.model.dto.Transaction
+import com.bh.cwms.model.dto.TransferRequest
+import com.bh.cwms.model.entity.Wallet
+import com.bh.cwms.model.entity.WalletItem
+import com.bh.cwms.repository.WalletItemRepository
+import com.bh.cwms.repository.WalletRepository
+import com.bh.cwms.util.EncryptionUtil
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+
+interface TransactionService {
+    fun transferUnits(transferRequest: TransferRequest): Boolean
+}
+
+@Service
+class TransactionServiceImpl (
+    private val walletRepository: WalletRepository,
+    private val walletItemRepository: WalletItemRepository
+) : TransactionService {
+
+    @Transactional
+    override fun transferUnits(transferRequest: TransferRequest): Boolean {
+        val sourceWallet = walletRepository.findById(transferRequest.sourceWalletId).orElseThrow {
+            RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+        }
+        val item: WalletItem =
+            sourceWallet.walletItems.stream().filter { it.currency == transferRequest.currency }
+                .findAny().orElseThrow {
+                    RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+                }
+        if (transferRequest.units > item.balance) {
+            throw RuntimeException("Insufficient Balance")
+        }
+        val privateKey: String = EncryptionUtil.decrypt(sourceWallet.privateKey!!, transferRequest.pin)
+        val targetWallet: Wallet = walletRepository.findById(transferRequest.targetWalletId).orElseThrow {
+            RuntimeException("No wallet found for ID '${transferRequest.targetWalletId}'")
+        }
+        val targetItem = targetWallet.walletItems.filter {
+            it.currency == transferRequest.currency
+        }.ifEmpty {
+            throw RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+        }.first()
+
+        val txn = Transaction(
+            sourceWallet = sourceWallet.id,
+            targetWallet = targetWallet.id,
+            units = transferRequest.units,
+        )
+
+        if(!EncryptionUtil.verifyKeyPair(transferRequest.publicKey, privateKey)) {
+            throw RuntimeException("Invalid Access")
+        }
+
+        val mapper = ObjectMapper()
+        txn.signature = EncryptionUtil.encrypt(mapper.writer().writeValueAsString(txn), privateKey)
+        item.balance = item.balance.subtract(transferRequest.units)
+        targetItem.balance = item.balance.add(transferRequest.units)
+        walletItemRepository.save(item)
+        walletItemRepository.save(targetItem)
+        return true
+    }
+
+}
