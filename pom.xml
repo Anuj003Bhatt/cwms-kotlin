@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.bh</groupId>
 	<artifactId>cwms</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>cwms</name>
 	<description>CWMS</description>
 	<url/>
@@ -150,6 +150,19 @@
 			<plugin>
 				<groupId>org.jetbrains.kotlin</groupId>
 				<artifactId>kotlin-maven-plugin</artifactId>
+				<version>${kotlin.version}</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-noarg</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>org.jetbrains.kotlin</groupId>
+						<artifactId>kotlin-maven-allopen</artifactId>
+						<version>${kotlin.version}</version>
+					</dependency>
+				</dependencies>
 				<configuration>
 					<args>
 						<arg>-Xjsr305=strict</arg>
@@ -157,6 +170,7 @@
 					<compilerPlugins>
 						<plugin>spring</plugin>
 						<plugin>jpa</plugin>
+						<plugin>all-open</plugin>
 					</compilerPlugins>
 					<pluginOptions>
 						<option>all-open:annotation=jakarta.persistence.Entity</option>
@@ -164,18 +178,22 @@
 						<option>all-open:annotation=jakarta.persistence.Embeddable</option>
 					</pluginOptions>
 				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.jetbrains.kotlin</groupId>
-						<artifactId>kotlin-maven-allopen</artifactId>
-						<version>${kotlin.version}</version>
-					</dependency>
-					<dependency>
-						<groupId>org.jetbrains.kotlin</groupId>
-						<artifactId>kotlin-maven-noarg</artifactId>
-						<version>${kotlin.version}</version>
-					</dependency>
-				</dependencies>
+				<executions>
+					<execution>
+						<id>compile</id>
+						<phase>process-sources</phase>
+						<goals>
+							<goal>compile</goal>
+						</goals>
+						<configuration>
+							<sourceDirs>
+								<source>src/main/java</source>
+								<source>src/main/kotlin</source>
+								<source>src/main/resources</source>
+							</sourceDirs>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

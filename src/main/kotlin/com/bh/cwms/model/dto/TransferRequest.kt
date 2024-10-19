@@ -6,7 +6,6 @@ import java.util.UUID
 
 
 data class TransferRequest (
-    var sourceWalletId: UUID,
     val publicKey: String,
     val targetWalletId: UUID,
     val pin: String,

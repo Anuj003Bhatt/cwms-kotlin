@@ -39,6 +39,8 @@ services:
 #      - "8000:8000"
 #    depends_on:
 #      - app_database
+#    networks:
+#      - appNet
 networks:
   appNet:
 volumes:

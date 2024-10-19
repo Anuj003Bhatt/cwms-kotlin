@@ -35,7 +35,7 @@ class ApiConfig {
 
     @Bean
     fun priceApi(
-        @Value("\${bitcoin.api}") baseUrl: String,
-        @Value("\${bitcoin.api.timeout}") timeout: Long
+        @Value("\${ticker.api}") baseUrl: String,
+        @Value("\${ticker.api.timeout}") timeout: Long
     ) = createApi(baseUrl, timeout, PriceApi::class.java)
 }

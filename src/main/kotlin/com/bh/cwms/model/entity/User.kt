@@ -24,8 +24,8 @@ data class User (
     @Column(name = "password", nullable = false)
     var password: SaltEncrypt
 
-
 ) : DtoBridge<UserDto> {
+
     override fun toDto() = UserDto(
         id = id,
         username = username

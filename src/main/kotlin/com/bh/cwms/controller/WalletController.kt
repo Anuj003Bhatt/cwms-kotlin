@@ -2,11 +2,13 @@ package com.bh.cwms.controller
 
 import com.bh.cwms.model.dto.AddWallet
 import com.bh.cwms.model.dto.DeleteWalletRequest
+import com.bh.cwms.model.dto.UpdateWallet
 import com.bh.cwms.model.dto.UserContext
 import com.bh.cwms.service.wallet.WalletService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -15,6 +17,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("wallets")
+@Tag(name = "Wallets")
 class WalletController (
     private val walletService: WalletService
 ) {
@@ -31,8 +34,8 @@ class WalletController (
     )
     fun findWalletById(
         @AuthenticationPrincipal context: UserContext,
-        @PathVariable("id") id: UUID?
-    ) = walletService.getWallet(context.userId)
+        @PathVariable("id") id: UUID
+    ) = walletService.getWallet(id, context.userId)
 
     @PostMapping
     @Operation(summary = "Create wallet for user", description = "Create a wallet for the user")
@@ -42,6 +45,25 @@ class WalletController (
         @RequestBody addWallet: AddWallet,
         @AuthenticationPrincipal context: UserContext
     ) = walletService.createWallet(addWallet, context.userId)
+
+    @PostMapping("{id}/item")
+    @Operation(summary = "Add a wallet item for user", description = "Add a wallet item for user")
+    @ApiResponses(value = [ApiResponse(responseCode = "201", description = "Wallet Item added successfully")])
+    @ResponseStatus(HttpStatus.CREATED)
+    fun addWalletItem(
+        @PathVariable("id") id: UUID,
+        @RequestBody addWallet: AddWallet,
+        @AuthenticationPrincipal context: UserContext
+    ) = walletService.addWalletItem(id, addWallet, context.userId)
+
+    @PatchMapping("{id}/pin/update")
+    @Operation(summary = "Change Wallet Pin", description = "Change a wallet's pin")
+    @ApiResponses(value = [ApiResponse(responseCode = "200", description = "Pin changed successfully")])
+    fun pinChange(
+        @PathVariable("id") id: UUID,
+        @RequestBody updateWallet: UpdateWallet,
+        @AuthenticationPrincipal context: UserContext
+    ) = walletService.updateWallet(updateWallet, id, context.userId)
 
     @DeleteMapping("{id}")
     @Operation(summary = "Delete wallet", description = "Delete a wallet for the user")

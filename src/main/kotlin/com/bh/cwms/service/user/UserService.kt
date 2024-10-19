@@ -19,13 +19,15 @@ interface UserService {
 class UserServiceImpl (
     private val userRepository: UserRepository
 ) : UserService {
-    private val log = LoggerFactory.getLogger(this.javaClass);
+    companion object {
+        private val log = LoggerFactory.getLogger(UserServiceImpl::class.java);
+    }
 
     override fun createUser(newUser: AddUser): UserDto {
         val existingUser = userRepository.findByUsername(newUser.username)
         if (existingUser.isPresent) {
             log.error("")
-            throw RuntimeException("User with same email/phone/username already exists")
+            throw RuntimeException("User with same username already exists")
         }
         return userRepository.save(
             User(

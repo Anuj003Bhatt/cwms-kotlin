@@ -19,8 +19,8 @@ import java.util.*
 interface WalletService {
     fun createWallet(newWallet: AddWallet, userId: UUID): WalletDto
     fun addWalletItem(walletId:UUID, newWallet: AddWallet, userId: UUID): WalletItemDto
-    fun getWallet(id: UUID): WalletDto
-    fun updateWallet(newWallet: UpdateWallet, id: UUID): WalletDto
+    fun getWallet(id: UUID, userId: UUID): WalletDto
+    fun updateWallet(newWallet: UpdateWallet, id: UUID, userId: UUID): WalletDto
     fun deleteWallet(id: UUID, userId:UUID, deleteWalletRequest: DeleteWalletRequest)
 }
 
@@ -31,7 +31,10 @@ class WalletServiceImpl (
     private val walletItemRepository: WalletItemRepository,
     private val userRepository: UserRepository
 ) : WalletService {
-    private val log = LoggerFactory.getLogger(this.javaClass);
+    companion object {
+        private val log = LoggerFactory.getLogger(WalletServiceImpl::class.java);
+    }
+
     @Transactional
     override fun createWallet(newWallet: AddWallet, userId: UUID): WalletDto {
         val user = userRepository.findById(userId).orElseThrow {
@@ -85,25 +88,27 @@ class WalletServiceImpl (
 
     private fun getWalletBalance(walletDto: WalletDto) : BigDecimal {
         val currencyPriceMap = mutableMapOf<String, BigDecimal>()
-        val balance: BigDecimal = BigDecimal.ZERO
-        walletDto.items.forEach {
+        return walletDto.items.map {
             log.debug("Fetching price for ${it.currency.name}")
-            val rate:BigDecimal = currencyPriceMap[it.currency.name] ?:priceService.getPriceUsd(it.currency)
-            currencyPriceMap[it.currency.name] = rate
-            balance.add(it.balance.multiply(rate))
+            val rate:BigDecimal = currencyPriceMap[it.currency.name] ?:priceService.getPrice(it.currency, "USD")
+            it.balance.multiply(rate)
+        }.reduce { acc, it ->
+            acc.add(it)
         }
-        return balance
     }
 
-    override fun getWallet(id: UUID): WalletDto = walletRepository
+    override fun getWallet(id: UUID, userId: UUID): WalletDto = walletRepository
         .findById(id)
         .orElseThrow {
-            RuntimeException("No Wallet found for ID '${id}'")
+            RuntimeException("No Wallet found for ID '${id}'.")
+        }.also {
+            if (it.user.id != userId)
+                throw RuntimeException("No Wallet with the ID '${id}' found for user.")
         }.toDto().also {
             it.balanceInUsd = getWalletBalance(it)
         }
 
-    override fun updateWallet(newWallet: UpdateWallet, userId: UUID): WalletDto {
+    override fun updateWallet(newWallet: UpdateWallet, id: UUID, userId: UUID): WalletDto {
         val wallet = walletRepository.findByUserId(userId).orElseThrow {
             RuntimeException("No wallet exists for user '${userId}'.")
         }
@@ -112,7 +117,7 @@ class WalletServiceImpl (
             throw RuntimeException("Invalid Access Detected")
         }
 
-        wallet.privateKey = EncryptionUtil.encrypt(privateKey, newWallet.newPin)
+        wallet.privateKey = encrypt(privateKey, newWallet.newPin)
         return walletRepository.save(wallet).toDto()
     }
 

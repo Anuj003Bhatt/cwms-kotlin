@@ -8,11 +8,13 @@ import com.bh.cwms.repository.WalletItemRepository
 import com.bh.cwms.repository.WalletRepository
 import com.bh.cwms.util.EncryptionUtil
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.util.UUID
 
 interface TransactionService {
-    fun transferUnits(transferRequest: TransferRequest): Boolean
+    fun transferUnits(transferRequest: TransferRequest, userId: UUID): Boolean
 }
 
 @Service
@@ -21,15 +23,30 @@ class TransactionServiceImpl (
     private val walletItemRepository: WalletItemRepository
 ) : TransactionService {
 
+    companion object {
+        private val log = LoggerFactory.getLogger(TransactionServiceImpl::class.java)
+    }
+
     @Transactional
-    override fun transferUnits(transferRequest: TransferRequest): Boolean {
-        val sourceWallet = walletRepository.findById(transferRequest.sourceWalletId).orElseThrow {
-            RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+    override fun transferUnits(transferRequest: TransferRequest, userId: UUID): Boolean {
+        log.debug(
+            "Processing transaction for user {} for currency {} for units {}",
+            userId,
+            transferRequest.currency,
+            transferRequest.units
+        )
+        val sourceWallet = walletRepository.findByUserId(userId).orElseThrow {
+            log.error("No wallet for user {} found", userId)
+            RuntimeException("No wallet found for ID '$userId'")
         }
         val item: WalletItem =
             sourceWallet.walletItems.stream().filter { it.currency == transferRequest.currency }
                 .findAny().orElseThrow {
-                    RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+                    log.error("Wallet Item for currency {} for wallet {} does not exist",
+                        transferRequest.currency,
+                        sourceWallet.id
+                    )
+                    RuntimeException("No wallet found for ID '$userId'")
                 }
         if (transferRequest.units > item.balance) {
             throw RuntimeException("Insufficient Balance")
@@ -41,13 +58,13 @@ class TransactionServiceImpl (
         val targetItem = targetWallet.walletItems.filter {
             it.currency == transferRequest.currency
         }.ifEmpty {
-            throw RuntimeException("No wallet found for ID '${transferRequest.sourceWalletId}'")
+            throw RuntimeException("No wallet found for currency '${transferRequest.currency}'")
         }.first()
 
         val txn = Transaction(
             sourceWallet = sourceWallet.id,
             targetWallet = targetWallet.id,
-            units = transferRequest.units,
+            units = transferRequest.units
         )
 
         if(!EncryptionUtil.verifyKeyPair(transferRequest.publicKey, privateKey)) {
