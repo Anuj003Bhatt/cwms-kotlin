@@ -15,7 +15,7 @@ class Wallet (
     @UuidGenerator
     var id: UUID,
 
-    @OneToOne(cascade = [CascadeType.ALL])
+    @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     var user: User,
 

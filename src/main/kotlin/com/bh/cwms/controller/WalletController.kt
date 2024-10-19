@@ -1,9 +1,6 @@
 package com.bh.cwms.controller
 
-import com.bh.cwms.model.dto.AddWallet
-import com.bh.cwms.model.dto.DeleteWalletRequest
-import com.bh.cwms.model.dto.UpdateWallet
-import com.bh.cwms.model.dto.UserContext
+import com.bh.cwms.model.dto.*
 import com.bh.cwms.service.wallet.WalletService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -52,9 +49,9 @@ class WalletController (
     @ResponseStatus(HttpStatus.CREATED)
     fun addWalletItem(
         @PathVariable("id") id: UUID,
-        @RequestBody addWallet: AddWallet,
+        @RequestBody addWalletItem: AddWalletItem,
         @AuthenticationPrincipal context: UserContext
-    ) = walletService.addWalletItem(id, addWallet, context.userId)
+    ) = walletService.addWalletItem(id, addWalletItem, context.userId)
 
     @PatchMapping("{id}/pin/update")
     @Operation(summary = "Change Wallet Pin", description = "Change a wallet's pin")

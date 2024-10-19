@@ -1,5 +1,6 @@
 package com.bh.cwms.service.wallet
 
+import com.bh.cwms.exception.CwmsException
 import com.bh.cwms.model.dto.*
 import com.bh.cwms.model.entity.Wallet
 import com.bh.cwms.model.entity.WalletItem
@@ -18,7 +19,7 @@ import java.util.*
 
 interface WalletService {
     fun createWallet(newWallet: AddWallet, userId: UUID): WalletDto
-    fun addWalletItem(walletId:UUID, newWallet: AddWallet, userId: UUID): WalletItemDto
+    fun addWalletItem(walletId:UUID, newWallet: AddWalletItem, userId: UUID): WalletItemDto
     fun getWallet(id: UUID, userId: UUID): WalletDto
     fun updateWallet(newWallet: UpdateWallet, id: UUID, userId: UUID): WalletDto
     fun deleteWallet(id: UUID, userId:UUID, deleteWalletRequest: DeleteWalletRequest)
@@ -69,13 +70,22 @@ class WalletServiceImpl (
         return walletDto
     }
 
-    override fun addWalletItem(walletId: UUID, newWallet: AddWallet, userId: UUID): WalletItemDto {
+    override fun addWalletItem(walletId: UUID, newWallet: AddWalletItem, userId: UUID): WalletItemDto {
         val wallet = walletRepository.findByUserId(userId).orElseThrow {
             RuntimeException("No wallet exists for user '${userId}'.")
         }
         if (wallet.walletItems.any { it.currency == newWallet.currency }) {
             throw RuntimeException("Wallet for currency '${newWallet.currency}' already exists.")
         }
+        try {
+            val privateKey = EncryptionUtil.decrypt(wallet.privateKey!!, newWallet.pin)
+            if(!EncryptionUtil.verifyKeyPair(newWallet.publicKey, privateKey)) {
+                throw RuntimeException("Invalid Access Detected")
+            }
+        } catch (e: Exception) {
+            throw CwmsException("Invalid Access")
+        }
+
         return walletItemRepository.save(
             WalletItem(
                 id = UUID.randomUUID(),

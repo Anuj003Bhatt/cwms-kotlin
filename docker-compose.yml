@@ -32,15 +32,15 @@ services:
       - appNet
     volumes:
       - pgData:/var/lib/postgresql
-#  cwms:
-#    container_name: cwms
-#    build: ./
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - app_database
-#    networks:
-#      - appNet
+  cwms:
+    container_name: cwms
+    build: ./
+    ports:
+      - "8080:8080"
+    depends_on:
+      - app_database
+    networks:
+      - appNet
 networks:
   appNet:
 volumes:
