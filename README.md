@@ -20,6 +20,19 @@ The flow for the user takes the below approach:
     - After all validation are successful the transaction is created and signed with the user's private key
     - Then it's added to a blockchain
 
+## Transaction Verification
+Whenever a user submits a transaction, below details are required to be submitted:
+- Target Wallet ID, receiving end
+- Own Public Key
+- Pin
+- Currency
+- Units
+
+The verification takes below approach:
+- Using the pin and public key first the user verification is done.
+- Then using the currency the corresponding wallet item is identified.
+- An internal Transaction is created to submit to blockchain is created.
+- The transaction is then signed with the private key of the current user.
 
 # APIs
 - Users
@@ -54,3 +67,13 @@ The flow for the user takes the below approach:
 
 # Testing
 Swagger URL: http://localhost:8080/swagger-ui/index.html
+
+## Notes for using the app initially
+To enable user to perform some transaction the create wallet API
+creates a wallet with a fixed balance of 100.
+So in order to test the API please take below approach initially:
+- Create 2 users using the public signup api
+- Create a wallet for each user and record below from the response for each:
+    - Public Key
+    - Pin
+- Now you can transfer units using the `transfer units` endpoint
