@@ -3,6 +3,36 @@ This repository contains the code base for the Crypto wallet management system.
 The details including the approach methodologies, available feature, API documentations
 are included in this ReadMe.
 
+# Steps to run app locally
+One can run the app in below ways
+
+## Dockerized
+Pre-requisites:
+- Docker
+### Steps
+- Navigate to root of the repository
+- run the below command
+```
+docker-compose up
+```
+Wait for a while and below service will be available
+- PostgreSQL at port _5432_
+- PgAdmin at port _5050_ [localhost:5050]
+- Application itself at port _8080_
+- And swagger at http://localhost:8080/swagger-ui/index.html#/
+
+## Manual
+Pre-requisites:
+- Maven
+- Java 17+
+- Kotlin
+- PostgreSQL
+- PgAdmin [Option if data verification is required in DB]
+- IntelliJ or other IDE
+
+Open the application and run the main application from `com.bh.cwms.CwmsApplication`
+
+
 # Approach & Methodology
 The approach taken in this application is a single wallet for each user with multiple wallet
 items for each currency.
